@@ -1,0 +1,76 @@
+<div style="float:left">Mon pseudo : </div><div id=my-number>LOADING</div>
+Enter Chat and press enter
+<div><input id=input placeholder=you-chat-here /></div>
+<div id=box></div>
+<div id=pubnub pub-key=demo sub-key=demo></div>
+<script src="js/pubnub-dev.js" ></script>
+<script>(function(){
+    var box     = PUBNUB.$('box')
+    ,   input   = PUBNUB.$('input')
+    ,   channel = 'chat'
+	//,	number = 'test';
+    
+    var urlargs         = urlparams();
+    var my_number       = PUBNUB.$('my-number');
+    var number          = urlargs.number;
+
+    my_number.number    = number;
+    my_number.innerHTML = '  '+my_number.number;
+
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    // Update Location if Not Set
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    if (!('number' in urlargs)) {
+        var retour_prompt = prompt("Votre pseudo ?","");
+        urlargs.number = retour_prompt;
+
+        if(!(urlargs.number)){ alert('Erreur vous devez spécifier un pseudo !'); location.href = windows.history.back(); }
+        else{
+        location.href = urlstring(urlargs);
+        return; }
+    }
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    // Get URL Params
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    function urlparams() {
+        var params = {};
+        if (location.href.indexOf('?') < 0) return params;
+
+        PUBNUB.each(
+            location.href.split('?')[1].split('&'),
+            function(data) { var d = data.split('='); params[d[0]] = d[1]; }
+        );
+
+        return params;
+    }
+
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    // Construct URL Param String
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    function urlstring(params) {
+        return location.href.split('?')[0] + '?' + PUBNUB.map(
+            params, function( key, val) { return key + '=' + val }
+        ).join('&');
+    }
+	
+    // HANDLE TEXT MESSAGE
+    function chat_receive(text) {
+        box.innerHTML = (''+ number + ' - ' + text).replace( /[<>]/g, '' ) +
+            '<br>' + box.innerHTML;
+    }
+    // OPEN SOCKET TO RECEIVE TEXT MESSAGE
+    PUBNUB.subscribe({
+		number : number,
+        channel : channel,
+        message : chat_receive
+    });
+    // SEND TEXT MESSAGE
+    PUBNUB.bind( 'keyup', input, function(e) {
+        (e.keyCode || e.charCode) === 13 && PUBNUB.publish({
+			number : number,
+            channel : channel,
+            message : input.value,
+            x       : (input.value='')
+        });
+    } );
+})();</script>
